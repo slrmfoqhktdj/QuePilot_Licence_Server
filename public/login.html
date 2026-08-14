@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
+  <title>QuePilot – 로그인</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+  <nav class="navbar">
+    <a href="/" class="logo">Que<span>Pilot</span></a>
+    <div class="nav-links">
+      <a href="/">홈</a>
+    </div>
+  </nav>
+
+  <div class="auth-container">
+    <!-- 로그인 폼 -->
+    <div class="auth-card" id="loginCard">
+      <h2>로그인</h2>
+      <p class="subtitle">QuePilot 계정으로 로그인하세요</p>
+
+      <div id="loginError" style="display:none; background:rgba(255,82,82,0.1); border:1px solid rgba(255,82,82,0.3); border-radius:8px; padding:10px; margin-bottom:16px; color:#ff5252; font-size:13px;"></div>
+
+      <div class="form-group">
+        <label>이메일</label>
+        <input type="email" id="loginEmail" placeholder="email@example.com" />
+      </div>
+      <div class="form-group">
+        <label>비밀번호</label>
+        <input type="password" id="loginPassword" placeholder="비밀번호 입력" />
+      </div>
+      <button class="form-btn" id="loginBtn" onclick="login()">로그인</button>
+
+      <div class="auth-footer">
+        계정이 없으신가요? <a href="#" onclick="showRegister()">회원가입</a>
+      </div>
+    </div>
+
+    <!-- 회원가입 폼 -->
+    <div class="auth-card" id="registerCard" style="display:none;">
+      <h2>회원가입</h2>
+      <p class="subtitle">QuePilot 계정을 만드세요</p>
+
+      <div id="registerError" style="display:none; background:rgba(255,82,82,0.1); border:1px solid rgba(255,82,82,0.3); border-radius:8px; padding:10px; margin-bottom:16px; color:#ff5252; font-size:13px;"></div>
+      <div id="registerSuccess" style="display:none; background:rgba(72,199,142,0.1); border:1px solid rgba(72,199,142,0.3); border-radius:8px; padding:10px; margin-bottom:16px; color:#48c78e; font-size:13px;"></div>
+
+      <div class="form-group">
+        <label>이메일</label>
+        <input type="email" id="regEmail" placeholder="email@example.com" />
+      </div>
+      <div class="form-group">
+        <label>비밀번호</label>
+        <input type="password" id="regPassword" placeholder="8자 이상" />
+      </div>
+      <div class="form-group">
+        <label>비밀번호 확인</label>
+        <input type="password" id="regPasswordConfirm" placeholder="비밀번호 다시 입력" />
+      </div>
+      <div class="form-group">
+        <label>회사/단체명 (선택)</label>
+        <input type="text" id="regCompany" placeholder="회사명" />
+      </div>
+      <div class="form-group">
+        <label>연락처 (선택)</label>
+        <input type="text" id="regPhone" placeholder="010-0000-0000" />
+      </div>
+      <button class="form-btn" id="registerBtn" onclick="register()">가입하기</button>
+
+      <div class="auth-footer">
+        이미 계정이 있으신가요? <a href="#" onclick="showLogin()">로그인</a>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // 해시에 따라 초기 화면 전환
+  if (window.location.hash === '#register') showRegister();
+
+  function showLogin() {
+    document.getElementById('loginCard').style.display = 'block';
+    document.getElementById('registerCard').style.display = 'none';
+    history.replaceState(null, '', '/login.html');
+  }
+
+  function showRegister() {
+    document.getElementById('loginCard').style.display = 'none';
+    document.getElementById('registerCard').style.display = 'block';
+    history.replaceState(null, '', '/login.html#register');
+  }
+
+  async function login() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const errBox = document.getElementById('loginError');
+    const btn = document.getElementById('loginBtn');
+
+    errBox.style.display = 'none';
+    if (!email || !password) {
+      errBox.textContent = '이메일과 비밀번호를 입력하세요';
+      errBox.style.display = 'block';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = '로그인 중...';
+
+    try {
+      const res = await fetch('/api/member/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('member', JSON.stringify(data.member));
+        // redirect 파라미터가 있으면 해당 페이지로, 없으면 홈으로
+        const params = new URLSearchParams(window.location.search);
+        const redirect = params.get('redirect');
+        window.location.href = redirect || '/';
+      } else {
+        errBox.textContent = data.message;
+        errBox.style.display = 'block';
+      }
+    } catch (e) {
+      errBox.textContent = '서버에 연결할 수 없습니다';
+      errBox.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '로그인';
+    }
+  }
+
+  async function register() {
+    const email = document.getElementById('regEmail').value.trim();
+    const password = document.getElementById('regPassword').value;
+    const passwordConfirm = document.getElementById('regPasswordConfirm').value;
+    const companyName = document.getElementById('regCompany').value.trim();
+    const phone = document.getElementById('regPhone').value.trim();
+    const errBox = document.getElementById('registerError');
+    const successBox = document.getElementById('registerSuccess');
+    const btn = document.getElementById('registerBtn');
+
+    errBox.style.display = 'none';
+    successBox.style.display = 'none';
+
+    if (!email || !password) {
+      errBox.textContent = '이메일과 비밀번호를 입력하세요';
+      errBox.style.display = 'block';
+      return;
+    }
+    if (password.length < 8) {
+      errBox.textContent = '비밀번호는 8자 이상이어야 합니다';
+      errBox.style.display = 'block';
+      return;
+    }
+    if (password !== passwordConfirm) {
+      errBox.textContent = '비밀번호가 일치하지 않습니다';
+      errBox.style.display = 'block';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = '가입 중...';
+
+    try {
+      const res = await fetch('/api/member/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, companyName, phone }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        successBox.textContent = '가입이 완료되었습니다! 로그인해주세요.';
+        successBox.style.display = 'block';
+        setTimeout(() => showLogin(), 2000);
+      } else {
+        errBox.textContent = data.message;
+        errBox.style.display = 'block';
+      }
+    } catch (e) {
+      errBox.textContent = '서버에 연결할 수 없습니다';
+      errBox.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '가입하기';
+    }
+  }
+
+  // Enter 키 지원
+  document.getElementById('loginPassword')?.addEventListener('keypress', (e) => { if (e.key === 'Enter') login(); });
+  document.getElementById('regPasswordConfirm')?.addEventListener('keypress', (e) => { if (e.key === 'Enter') register(); });
+</script>
+</body>
+</html>

@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
+  <title>QuePilot License - 관리자</title>
+  <link rel="stylesheet" href="/css/admin.css" />
+</head>
+
+<body>
+
+  <!-- 관리자 로그인 -->
+  <div class="login-overlay" id="loginOverlay">
+    <div class="login-box">
+      <h2>🔐 관리자 로그인</h2>
+      <input type="email" id="adminEmail" placeholder="관리자 이메일" />
+      <input type="password" id="adminPw" placeholder="비밀번호" />
+      <button onclick="adminLogin()">로그인</button>
+      <div class="login-error" id="loginError">인증 실패</div>
+    </div>
+  </div>
+
+  <!-- 메인 -->
+  <div class="header">
+    <h1>🚀 QuePilot License 관리</h1>
+    <div class="header-actions">
+      <button onclick="adminLogout()">로그아웃</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- 탭 -->
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('users')">사용자 관리</div>
+      <div class="tab" onclick="switchTab('payments')">결제 내역</div>
+      <div class="tab" onclick="switchTab('sessions')">활성 세션</div>
+      <div class="tab" onclick="switchTab('files')">파일 관리</div> 
+    </div>
+
+    <!-- 사용자 관리 탭 -->
+    <div class="tab-content active" id="tab-users">
+      <div class="stats" id="stats"></div>
+
+      <div class="toolbar">
+        <h2>구독 사용자 관리</h2>
+        <button class="btn btn-add" onclick="openCreateModal()">+ 사용자 추가</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>이메일</th>
+              <th>회사</th>
+              <th>연락처</th>
+              <th>플랜</th>
+              <th>최대 인원수</th>
+              <th>유예기간</th>
+              <th>만료일</th>
+              <th>남은 일수</th>
+              <th>상태</th>
+              <th>마지막 접속</th>
+              <th>관리</th>
+            </tr>
+          </thead>
+          <tbody id="userTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 결제 내역 탭 -->
+    <div class="tab-content" id="tab-payments">
+      <div class="revenue-summary" id="revenueSummary"></div>
+
+      <div class="toolbar">
+        <h2>결제 내역</h2>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>이메일</th>
+              <th>플랜</th>
+              <th>금액</th>
+              <th>결제 수단</th>
+              <th>기간</th>
+              <th>상태</th>
+              <th>결제일</th>
+              <th>관리</th>
+            </tr>
+          </thead>
+          <tbody id="paymentTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 활성 세션 탭 -->
+    <div class="tab-content" id="tab-sessions">
+      <div class="toolbar">
+        <h2>활성 세션</h2>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>이메일</th>
+              <th>접속 시간</th>
+              <th>마지막 체크</th>
+              <th>관리</th>
+            </tr>
+          </thead>
+          <tbody id="sessionTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 파일 관리 탭 -->
+    <div class="tab-content" id="tab-files">
+      <div class="toolbar">
+        <h2>서버 파일 관리</h2>
+        <button class="btn btn-add" onclick="openUploadModal()">+ 파일 업로드</button>
+      </div>
+
+      <p style="color:#888; font-size:13px; margin-bottom:16px;">
+        활성 상태인 파일이 사용자 대시보드(로컬서버) 또는 공개 다운로드(데스크탑 앱)에 노출됩니다. 활성 파일은 구분(카테고리)별로 하나씩 지정할 수 있습니다.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>상태</th>
+              <th>구분</th>
+              <th>파일명</th>
+              <th>버전</th>
+              <th>크기</th>
+              <th>설명</th>
+              <th>다운로드 수</th>
+              <th>업로드일</th>
+              <th>관리</th>
+            </tr>
+          </thead>
+          <tbody id="fileTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+
+
+  </div>
+
+  <!-- 사용자 생성/수정 모달 -->
+  <div class="modal-overlay hidden" id="userModal">
+    <div class="modal">
+      <h3 id="userModalTitle">사용자 추가</h3>
+      <input type="hidden" id="editUserId" />
+
+      <label>이메일</label>
+      <input type="email" id="mEmail" placeholder="user@example.com" />
+
+      <label>비밀번호</label>
+      <input type="password" id="mPassword" placeholder="비밀번호 (수정 시 빈칸이면 유지)" />
+
+      <label>회사명</label>
+      <input type="text" id="mCompany" placeholder="회사명 (선택)" />
+
+      <label>연락처</label>
+      <input type="text" id="mPhone" placeholder="010-0000-0000 (선택)" />
+
+      <label>플랜</label>
+      <select id="mPlan">
+        <!-- <option value="basic">Basic</option> -->
+        <option value="">선택 안함</option>
+        <option value="standard">Standard</option>
+        <!-- <option value="premium">Premium</option> -->
+      </select>
+
+      <label>최대 인원수</label>
+      <input type="number" id="mMaxUsers" placeholder="미설정 시 빈칸" min="1" max="999" />
+
+      <label>유예기간 (일)</label>
+      <input type="number" id="mGraceDays" placeholder="기본 7일" min="0" max="365" value="7" />
+
+      <label>만료일</label>
+      <input type="date" id="mExpires" />
+
+      <div class="modal-actions">
+        <button class="btn btn-cancel" onclick="closeUserModal()">취소</button>
+        <button class="btn btn-save" onclick="saveUser()">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 파일 업로드 모달 -->
+  <div class="modal-overlay hidden" id="uploadModal">
+    <div class="modal">
+      <h3>파일 업로드</h3>
+
+      <label>파일 선택 (.exe, .zip, .msi)</label>
+      <input type="file" id="uploadFile" accept=".exe,.zip,.msi" />
+
+      <label>버전</label>
+      <input type="text" id="uploadVersion" placeholder="예: 1.0.0" />
+
+      <label>구분</label>
+      <select id="uploadCategory">
+        <option value="server">로컬서버</option>
+        <option value="desktop">데스크탑 앱</option>
+      </select>
+
+      <label>설명 (선택)</label>
+      <textarea id="uploadDesc" placeholder="변경사항, 안내사항 등" rows="3"
+        style="width:100%; background:#2a2a2a; border:1px solid #444; color:#fff; border-radius:8px; padding:10px; font-size:14px; resize:vertical;">
+      </textarea>
+
+      <!-- 업로드 진행 바 -->
+      <div id="uploadProgress" style="display:none; margin-top:12px;">
+        <div style="background:#333; border-radius:8px; overflow:hidden; height:20px;">
+          <div id="progressBar"
+            style="background:linear-gradient(90deg,#4a6cf7,#6c8cff); height:100%; width:0%; transition:width 0.3s; border-radius:8px;">
+          </div>
+        </div>
+        <p id="progressText" style="color:#aaa; font-size:12px; margin-top:4px;">0%</p>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-cancel" onclick="closeUploadModal()">취소</button>
+        <button class="btn btn-save" id="uploadBtn" onclick="uploadFile()">업로드</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 파일 수정 모달 -->
+  <div class="modal-overlay hidden" id="editFileModal">
+    <div class="modal">
+      <h3>파일 정보 수정</h3>
+      <input type="hidden" id="editFileId" />
+
+      <label>버전</label>
+      <input type="text" id="editFileVersion" />
+
+      <label>구분</label>
+      <select id="editFileCategory">
+        <option value="server">로컬서버</option>
+        <option value="desktop">데스크탑 앱</option>
+      </select>
+
+      <label>설명</label>
+      <textarea id="editFileDesc" rows="3"
+        style="width:100%; background:#2a2a2a; border:1px solid #444; color:#fff; border-radius:8px; padding:10px; font-size:14px; resize:vertical;">
+      </textarea>
+
+      <div class="modal-actions">
+        <button class="btn btn-cancel" onclick="closeEditFileModal()">취소</button>
+        <button class="btn btn-save" onclick="saveFileEdit()">저장</button>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="/js/utils.js"></script>
+  <script>
+    let adminToken = localStorage.getItem('adminToken') || '';
+
+    const planLabels = { basic: 'Basic', standard: 'Standard', premium: 'Premium' };
+    const methodLabels = { bank_transfer: '계좌이체', card: '카드', other: '기타' };
+    const statusLabels = { completed: '완료', refunded: '환불', pending: '대기' };
+    const statusClass = { completed: 'badge-completed', refunded: 'badge-refunded', pending: 'badge-pending' };
+
+    if (adminToken) {
+      if (location.pathname === '/admin/login') {
+        location.href = '/admin';
+      } else {
+        document.getElementById('loginOverlay').classList.add('hidden');
+        loadAll();
+      }
+    }
+
+    // ========== 탭 전환 ==========
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('tab-' + tabName).classList.add('active');
+
+      if (tabName === 'payments') loadPayments();
+      if (tabName === 'sessions') loadSessions();
+      if (tabName === 'files') loadFiles();
+    }
+
+    // ========== 관리자 인증 ==========
+    async function adminLogin() {
+      const email = document.getElementById('adminEmail').value;
+      const pw = document.getElementById('adminPw').value;
+      const errEl = document.getElementById('loginError');
+
+      try {
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password: pw }),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          adminToken = data.token;
+          localStorage.setItem('adminToken', adminToken);
+          location.href = '/admin';
+        } else {
+          errEl.style.display = 'block';
+          errEl.textContent = data.message;
+        }
+      } catch (e) {
+        errEl.style.display = 'block';
+        errEl.textContent = '서버 연결 실패';
+      }
+    }
+
+    async function adminLogout() {
+      await fetch('/api/admin/logout', { method: 'POST' });
+      adminToken = '';
+      localStorage.removeItem('adminToken');
+      location.href = '/admin/login';
+    }
+
+    function authHeaders() {
+      return { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` };
+    }
+
+    // ========== 데이터 로드 ==========
+    async function loadAll() {
+      await loadStats();
+      await loadUsers();
+    }
+
+    async function loadStats() {
+      try {
+        const res = await fetch('/api/admin/stats', { headers: authHeaders() });
+        if (res.status === 401 || res.status === 403) { adminLogout(); return; }
+        const data = await res.json();
+        const s = data.stats;
+
+        document.getElementById('stats').innerHTML = `
+          <div class="stat-card"><div class="number">${s.totalUsers}</div><div class="label">전체 사용자</div></div>
+          <div class="stat-card"><div class="number">${s.activeUsers}</div><div class="label">활성 구독</div></div>
+          <div class="stat-card danger"><div class="number">${s.expiredUsers}</div><div class="label">만료됨</div></div>
+          <div class="stat-card warning"><div class="number">${s.expiringIn7Days}</div><div class="label">7일 내 만료</div></div>
+          <div class="stat-card"><div class="number">${s.activeSessions}</div><div class="label">활성 세션</div></div>
+        `;
+      } catch (e) { }
+    }
+
+    async function loadUsers() {
+      try {
+        const res = await fetch('/api/admin/users', { headers: authHeaders() });
+        if (res.status === 401 || res.status === 403) { adminLogout(); return; }
+        const data = await res.json();
+        const tbody = document.getElementById('userTable');
+
+        if (!data.users.length) {
+          tbody.innerHTML = '<tr><td colspan="11" class="empty">등록된 사용자가 없습니다</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.users.map(u => {
+          let badge;
+          if (!u.is_active) badge = '<span class="badge badge-inactive">비활성</span>';
+          else if (u.isExpired) badge = '<span class="badge badge-expired">만료됨</span>';
+          else if (u.daysLeft <= 7) badge = '<span class="badge badge-warning">만료 임박</span>';
+          else badge = '<span class="badge badge-active">활성</span>';
+          
+          console.log(`🔍 사용자 조회: ${u.email} - is_active: ${u.is_active}, expires_at: ${u.expires_at}, lastActive: ${u.last_active}`);
+
+          const exp = formatDate(u.expires_at);
+          const days = !u.expires_at ? '-' : (u.isExpired ? '만료됨' : u.daysLeft + '일');
+          const lastActive = formatDateTime(u.last_active);
+          const plan = u.plan ? (planLabels[u.plan] || u.plan) : '-';
+          const maxUsers = u.max_users ? u.max_users : '-';
+          const graceDays = u.grace_days !== null && u.grace_days !== undefined ? u.grace_days + '일' : '7일';
+          const expRaw = u.expires_at ? u.expires_at.split('T')[0] : '';
+
+          const editParams = [
+            `'${u.id}'`,
+            `'${u.email}'`,
+            `'${(u.company_name || '').replace(/'/g, "\\'")}'`,
+            `'${u.phone || ''}'`,
+            `'${u.plan || ''}'`,
+            `'${u.max_users || 0}'`,
+            `'${u.grace_days ?? 7}'`,
+            `'${expRaw}'`
+          ].join(',');
+
+          return `<tr>
+            <td><strong>${u.email}</strong></td>
+            <td>${u.company_name || '-'}</td>
+            <td>${u.phone || '-'}</td>
+            <td>${plan}</td>
+            <td>${maxUsers}</td>
+            <td>${graceDays}</td>
+            <td>${exp}</td>
+            <td>${days}</td>
+            <td>${badge}</td>
+            <td>${lastActive}</td>
+            <td>
+              <div class="actions">
+                <button class="btn btn-sm btn-extend" onclick="extendUser('${u.id}')">+30일</button>
+                <button class="btn btn-sm btn-edit" onclick="openEditModal(${editParams})">수정</button>
+                <button class="btn btn-sm btn-kick" onclick="kickUser('${u.id}')">강제종료</button>
+                <button class="btn btn-sm btn-delete" onclick="deleteUser('${u.id}', '${u.email}')">삭제</button>
+              </div>
+            </td>
+          </tr>`;
+        }).join('');
+      } catch (e) { }
+    }
+
+    async function loadPayments() {
+      try {
+        // 매출 통계
+        const statsRes = await fetch('/api/admin/payment-stats', { headers: authHeaders() });
+        const statsData = await statsRes.json();
+        if (statsData.success) {
+          const s = statsData.stats;
+          document.getElementById('revenueSummary').innerHTML = `
+            <div class="revenue-card"><div class="amount">₩${Number(s.totalRevenue).toLocaleString()}</div><div class="label">총 매출</div></div>
+            <div class="revenue-card"><div class="amount">₩${Number(s.monthlyRevenue).toLocaleString()}</div><div class="label">이번 달 매출</div></div>
+            <div class="revenue-card"><div class="amount refund">₩${Number(s.totalRefunded).toLocaleString()}</div><div class="label">총 환불</div></div>
+          `;
+        }
+
+        // 결제 내역
+        const res = await fetch('/api/admin/payments', { headers: authHeaders() });
+        const data = await res.json();
+        const tbody = document.getElementById('paymentTable');
+
+        if (!data.payments.length) {
+          tbody.innerHTML = '<tr><td colspan="9" class="empty">결제 내역이 없습니다</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.payments.map(p => {
+          const plan = planLabels[p.plan] || p.plan;
+          const method = methodLabels[p.payment_method] || p.payment_method;
+          const status = statusLabels[p.status] || p.status;
+          const cls = statusClass[p.status] || 'badge-inactive';
+          const started = formatDate(p.started_at);
+          const expires = formatDate(p.expires_at);
+          const created = formatDateTime(p.created_at);
+          const canRefund = p.status === 'completed';
+
+          return `<tr>
+            <td>${p.id}</td>
+            <td>${p.email}</td>
+            <td>${plan}</td>
+            <td>₩${Number(p.amount).toLocaleString()}</td>
+            <td>${method}</td>
+            <td>${started} ~ ${expires}</td>
+            <td><span class="badge ${cls}">${status}</span></td>
+            <td>${created}</td>
+            <td>
+              ${canRefund ? `<button class="btn btn-sm btn-refund" onclick="refundPayment(${p.id})">환불</button>` : '-'}
+            </td>
+          </tr>`;
+        }).join('');
+      } catch (e) { }
+    }
+
+    async function loadSessions() {
+      try {
+        const res = await fetch('/api/admin/activations', { headers: authHeaders() });
+        const data = await res.json();
+        const tbody = document.getElementById('sessionTable');
+
+        if (!data.activations.length) {
+          tbody.innerHTML = '<tr><td colspan="5" class="empty">활성 세션이 없습니다</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.activations.map(a => {
+          const activated = formatDateTime(a.activated_at);
+          const lastCheck = formatDateTime(a.last_check);
+
+          return `<tr>
+            <td>${a.id}</td>
+            <td>${a.email}</td>
+            <td>${activated}</td>
+            <td>${lastCheck}</td>
+            <td>
+              <button class="btn btn-sm btn-kick" onclick="kickUserBySession('${a.user_id}')">강제종료</button>
+            </td>
+          </tr>`;
+        }).join('');
+      } catch (e) { }
+    }
+
+    // ========== 사용자 CRUD ==========
+    function openCreateModal() {
+      document.getElementById('userModalTitle').textContent = '사용자 추가';
+      document.getElementById('editUserId').value = '';
+      document.getElementById('mEmail').value = '';
+      document.getElementById('mEmail').disabled = false;
+      document.getElementById('mPassword').value = '';
+      document.getElementById('mCompany').value = '';
+      document.getElementById('mPhone').value = '';
+      document.getElementById('mPlan').value = '';
+      document.getElementById('mMaxUsers').value = '';
+      document.getElementById('mGraceDays').value = 7;
+
+      const d = new Date();
+      d.setDate(d.getDate() + 30);
+      document.getElementById('mExpires').value = d.toISOString().split('T')[0];
+
+      document.getElementById('userModal').classList.remove('hidden');
+    }
+
+    function openEditModal(id, email, company, phone, plan, maxUsers, graceDays, expires) {
+      document.getElementById('userModalTitle').textContent = '사용자 수정';
+      document.getElementById('editUserId').value = id;
+      document.getElementById('mEmail').value = email;
+      document.getElementById('mEmail').disabled = true;
+      document.getElementById('mPassword').value = '';
+      document.getElementById('mCompany').value = company;
+      document.getElementById('mPhone').value = phone;
+      document.getElementById('mPlan').value = plan || '';
+      document.getElementById('mMaxUsers').value = maxUsers || 0;
+      document.getElementById('mGraceDays').value = graceDays ?? 7;
+      document.getElementById('mExpires').value = expires;
+
+      document.getElementById('userModal').classList.remove('hidden');
+    }
+
+    function closeUserModal() {
+      document.getElementById('userModal').classList.add('hidden');
+    }
+
+    async function saveUser() {
+      const userId = document.getElementById('editUserId').value;
+      const isEdit = !!userId;
+
+      const body = {
+        email: document.getElementById('mEmail').value,
+        password: document.getElementById('mPassword').value,
+        companyName: document.getElementById('mCompany').value,
+        phone: document.getElementById('mPhone').value,
+        plan: document.getElementById('mPlan').value,
+        maxUsers: parseInt(document.getElementById('mMaxUsers').value),
+        graceDays: parseInt(document.getElementById('mGraceDays').value) || 7,
+        expiresAt: document.getElementById('mExpires').value + 'T23:59:59',
+      };
+
+      if (!isEdit && (!body.email || !body.password)) {
+        alert('이메일과 비밀번호는 필수입니다');
+        return;
+      }
+
+      try {
+        const url = isEdit ? `/api/admin/users/${userId}` : '/api/admin/users';
+        const method = isEdit ? 'PUT' : 'POST';
+
+        const res = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify(body) });
+        const data = await res.json();
+
+        if (data.success) {
+          closeUserModal();
+          loadAll();
+        } else {
+          alert(data.message);
+        }
+      } catch (e) {
+        alert('저장 실패');
+      }
+    }
+
+    async function extendUser(userId) {
+      if (!confirm('구독을 30일 연장하시겠습니까?')) return;
+      try {
+        const res = await fetch(`/api/admin/users/${userId}/extend`, {
+          method: 'POST', headers: authHeaders(), body: JSON.stringify({ days: 30 }),
+        });
+        const data = await res.json();
+        if (data.success) loadAll();
+      } catch (e) { }
+    }
+
+    async function kickUser(userId) {
+      if (!confirm('활성 세션을 강제 종료하시겠습니까?')) return;
+      try {
+        await fetch(`/api/admin/users/${userId}/kick`, { method: 'POST', headers: authHeaders() });
+        loadAll();
+      } catch (e) { }
+    }
+
+    async function kickUserBySession(userId) {
+      if (!confirm('이 세션을 강제 종료하시겠습니까?')) return;
+      try {
+        await fetch(`/api/admin/users/${userId}/kick`, { method: 'POST', headers: authHeaders() });
+        loadSessions();
+      } catch (e) { }
+    }
+
+    async function deleteUser(userId, email) {
+      if (!confirm(`"${email}" 사용자를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+      try {
+        const res = await fetch(`/api/admin/users/${userId}`, { method: 'DELETE', headers: authHeaders() });
+        const data = await res.json();
+        if (data.success) loadAll();
+      } catch (e) { }
+    }
+
+    async function refundPayment(paymentId) {
+      if (!confirm('이 결제를 환불 처리하시겠습니까?\n사용자의 구독 상태가 재계산됩니다.')) return;
+      try {
+        const res = await fetch(`/api/admin/payments/${paymentId}`, {
+          method: 'PUT', headers: authHeaders(),
+          body: JSON.stringify({ status: 'refunded' }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          loadPayments();
+          loadAll();
+        }
+      } catch (e) { }
+    }
+
+    // Enter 키 지원
+    document.getElementById('adminPw').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') adminLogin();
+    });
+
+    // ========== 파일 관리 ==========
+
+    async function loadFiles() {
+      try {
+        const res = await fetch('/api/admin/files', { headers: authHeaders() });
+        if (res.status === 401 || res.status === 403) { adminLogout(); return; }
+        const data = await res.json();
+        const tbody = document.getElementById('fileTable');
+
+        if (!data.files.length) {
+          tbody.innerHTML = '<tr><td colspan="9" class="empty">업로드된 파일이 없습니다</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.files.map(f => {
+          const sizeMB = f.file_size_mb + ' MB';
+          const uploaded = formatDateTime(f.uploaded_at);
+          const statusBadge = f.is_active
+            ? '<span class="badge badge-active">활성</span>'
+            : '<span class="badge badge-inactive">비활성</span>';
+          const categoryLabel = f.category === 'desktop' ? '데스크탑 앱' : '로컬서버';
+          const categoryBadge = f.category === 'desktop'
+            ? '<span class="badge" style="background:#2d3b5a; color:#6c8cff;">데스크탑 앱</span>'
+            : '<span class="badge" style="background:#3a2d2d; color:#ff8c6c;">로컬서버</span>';
+          const fileWarning = !f.file_exists
+            ? ' <span style="color:#ff4444; font-size:11px;">⚠️ 파일 없음</span>'
+            : '';
+          const desc = f.description
+            ? (f.description.length > 30 ? f.description.substring(0, 30) + '...' : f.description)
+            : '-';
+
+          return `<tr>
+            <td>${statusBadge}</td>
+            <td>${categoryBadge}</td>
+            <td>${f.original_name}${fileWarning}</td>
+            <td><strong>v${f.version}</strong></td>
+            <td>${sizeMB}</td>
+            <td title="${f.description || ''}">${desc}</td>
+            <td>${f.download_count}</td>
+            <td>${uploaded}</td>
+            <td>
+              <div class="actions">
+                ${!f.is_active ? `<button class="btn btn-sm btn-extend" onclick="activateFile(${f.id})">활성화</button>` : ''}
+                <button class="btn btn-sm btn-edit" onclick="openEditFileModal(${f.id}, '${f.version}', '${f.category}', \`${(f.description || '').replace(/`/g, '\\`')}\`)">수정</button>
+                <button class="btn btn-sm btn-delete" onclick="deleteFile(${f.id}, '${f.original_name}')">삭제</button>
+              </div>
+            </td>
+          </tr>`;
+        }).join('');
+      } catch (e) {
+        console.error('파일 목록 로드 실패:', e);
+      }
+    }
+
+    function openUploadModal() {
+      document.getElementById('uploadFile').value = '';
+      document.getElementById('uploadVersion').value = '';
+      document.getElementById('uploadCategory').value = 'server';
+      document.getElementById('uploadDesc').value = '';
+      document.getElementById('uploadProgress').style.display = 'none';
+      document.getElementById('uploadBtn').disabled = false;
+      document.getElementById('uploadModal').classList.remove('hidden');
+    }
+
+    function closeUploadModal() {
+      document.getElementById('uploadModal').classList.add('hidden');
+    }
+
+    async function uploadFile() {
+      const fileInput = document.getElementById('uploadFile');
+      const version = document.getElementById('uploadVersion').value.trim();
+      const description = document.getElementById('uploadDesc').value.trim();
+      const category = document.getElementById('uploadCategory').value;
+
+      if (!fileInput.files.length) { alert('파일을 선택해주세요.'); return; }
+      if (!version) { alert('버전을 입력해주세요.'); return; }
+
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+      formData.append('version', version);
+      formData.append('description', description);
+      formData.append('category', category);
+
+      const btn = document.getElementById('uploadBtn');
+      const progressDiv = document.getElementById('uploadProgress');
+      const progressBar = document.getElementById('progressBar');
+      const progressText = document.getElementById('progressText');
+
+      btn.disabled = true;
+      btn.textContent = '업로드 중...';
+      progressDiv.style.display = 'block';
+
+      try {
+        const xhr = new XMLHttpRequest();
+
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            const pct = Math.round((e.loaded / e.total) * 100);
+            progressBar.style.width = pct + '%';
+            progressText.textContent = `${pct}% (${(e.loaded / 1024 / 1024).toFixed(1)}MB / ${(e.total / 1024 / 1024).toFixed(1)}MB)`;
+          }
+        });
+
+        await new Promise((resolve, reject) => {
+          xhr.onload = () => {
+            if (xhr.status === 200) {
+              const data = JSON.parse(xhr.responseText);
+              if (data.success) {
+                alert(`업로드 완료: ${data.file.original_name} (v${data.file.version})`);
+                closeUploadModal();
+                loadFiles();
+              } else {
+                alert(data.message);
+              }
+              resolve();
+            } else {
+              try {
+                const errData = JSON.parse(xhr.responseText);
+                alert(errData.message || '업로드 실패');
+              } catch(err) {
+                alert('업로드 실패');
+              }
+              reject();
+            }
+          };
+
+          xhr.onerror = () => {
+            alert('업로드 중 네트워크 오류');
+            reject();
+          };
+
+          xhr.open('POST', '/api/admin/files');
+          xhr.setRequestHeader('Authorization', `Bearer ${adminToken}`);
+          xhr.send(formData);
+        });
+      } catch (e) {
+        // reject 처리됨
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '업로드';
+      }
+    }
+
+    async function activateFile(fileId) {
+      if (!confirm('이 파일을 활성 다운로드 파일로 지정하시겠습니까?\n기존 활성 파일은 비활성화됩니다.')) return;
+      try {
+        const res = await fetch(`/api/admin/files/${fileId}/activate`, {
+          method: 'PUT', headers: authHeaders(),
+        });
+        const data = await res.json();
+        if (data.success) loadFiles();
+      } catch (e) {
+        alert('활성화 변경 실패');
+      }
+    }
+
+    async function deleteFile(fileId, fileName) {
+      if (!confirm(`"${fileName}" 파일을 삭제하시겠습니까?\n서버에서 파일이 완전히 삭제됩니다.`)) return;
+      try {
+        const res = await fetch(`/api/admin/files/${fileId}`, {
+          method: 'DELETE', headers: authHeaders(),
+        });
+        const data = await res.json();
+        if (data.success) loadFiles();
+        else alert(data.message);
+      } catch (e) {
+        alert('삭제 실패');
+      }
+    }
+
+    function openEditFileModal(id, version, category, description) {
+      document.getElementById('editFileId').value = id;
+      document.getElementById('editFileVersion').value = version;
+      document.getElementById('editFileCategory').value = category === 'desktop' ? 'desktop' : 'server';
+      document.getElementById('editFileDesc').value = description;
+      document.getElementById('editFileModal').classList.remove('hidden');
+    }
+
+    function closeEditFileModal() {
+      document.getElementById('editFileModal').classList.add('hidden');
+    }
+
+    async function saveFileEdit() {
+      const id = document.getElementById('editFileId').value;
+      const version = document.getElementById('editFileVersion').value.trim();
+      const description = document.getElementById('editFileDesc').value.trim();
+      const category = document.getElementById('editFileCategory').value;
+
+      if (!version) { alert('버전을 입력해주세요.'); return; }
+
+      try {
+        const res = await fetch(`/api/admin/files/${id}`, {
+          method: 'PUT', headers: authHeaders(),
+          body: JSON.stringify({ version, description, category }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeEditFileModal();
+          loadFiles();
+        } else {
+          alert(data.message);
+        }
+      } catch (e) {
+        alert('수정 실패');
+      }
+    }
+
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
+  <title>QuePilot – 대시보드</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+  <nav class="navbar">
+    <a href="/" class="logo">Que<span>Pilot</span></a>
+    <div class="nav-links">
+      <a href="/">홈</a>
+      <div style="position:relative;">
+        <button class="btn btn-outline" onclick="toggleDropdown()" id="userBtn" style="display:flex; align-items:center; gap:8px;">
+          <span id="navEmail"></span>
+          <span style="font-size:10px;">▼</span>
+        </button>
+        <div class="dropdown" id="dropdown">
+          <a href="/dashboard">내 구독 관리</a>
+          <a href="/dashboard#download">다운로드</a>
+          <div class="dropdown-divider"></div>
+          <a href="#" onclick="logout()">로그아웃</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="dashboard">
+    <h2 style="color:#fff; margin-bottom:32px;">대시보드</h2>
+
+    <!-- 구독 상태 -->
+    <div class="dash-card">
+      <h3>📋 구독 상태</h3>
+      <div id="subscriptionInfo">
+        <p style="color:#888;">로딩 중...</p>
+      </div>
+    </div>
+
+    <!-- 구독 신청 -->
+    <div class="dash-card" id="subscribeSection">
+      <h3>💳 구독 신청</h3>
+      <div class="pricing-grid" style="margin-top:16px;">
+        <!-- <div class="pricing-card" style="padding:24px;">
+          <h3>Basic</h3>
+          <div class="price" style="font-size:28px;">₩50,000</div>
+          <div class="period">1개월</div>
+          <button class="btn btn-outline" style="width:100%; margin-top:16px;" onclick="subscribe('basic')">선택</button>
+        </div> -->
+        <div class="pricing-card popular" id="plan-standard" style="padding:24px;">
+          <h3>Standard</h3>
+          <div class="price" style="font-size:28px;">₩130,000</div>
+          <div class="period">1개월</div>
+          <button class="btn btn-primary" style="width:100%; margin-top:16px;" onclick="subscribe('standard')">선택</button>
+        </div>
+        <!-- <div class="pricing-card" style="padding:24px;">
+          <h3>Premium</h3>
+          <div class="price" style="font-size:28px;">₩450,000</div>
+          <div class="period">12개월</div>
+          <button class="btn btn-outline" style="width:100%; margin-top:16px;" onclick="subscribe('premium')">선택</button>
+        </div> -->
+      </div>
+    </div>
+
+    <!-- 서버 계정 정보 -->
+    <div class="dash-card">
+      <h3>🔑 서버 로그인 안내</h3>
+      <div class="server-credentials">
+        <p style="color:#aaa; font-size:14px; line-height:1.8;">
+          QuePilot 서버(exe) 실행 시 로그인 화면에서<br>
+          홈페이지와 <strong style="color:#6c8cff;">동일한 이메일과 비밀번호</strong>를 입력하세요.
+        </p>
+        <div class="info-row" style="margin-top:12px;">
+          <span class="label">이메일</span>
+          <span class="value"><code id="serverEmail"></code></span>
+        </div>
+        <div class="info-row">
+          <span class="label">비밀번호</span>
+          <span class="value" style="color:#888;">홈페이지 비밀번호와 동일</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 다운로드 -->
+    <div class="dash-card" id="downloadSection" style="display:none;">
+      <h3>📥 다운로드</h3>
+      <p style="color:#888; font-size:13px; margin-bottom:16px;">활성 구독이 있어야 로컬서버를 다운로드할 수 있습니다.</p>
+      <div style="display:flex; align-items:center; gap:16px;">
+        <button class="btn btn-primary" onclick="download()" id="downloadBtn">QuePilot 서버 다운로드</button>
+        <span id="versionText" style="color:#888; font-size:13px;"></span>
+      </div>
+      <p style="color:#888; font-size:13px; margin-top:12px;">
+        데스크탑 앱은 로그인 없이 홈페이지에서 다운로드할 수 있습니다.
+        <a href="/#download" style="color:#6c8cff;">바로가기</a>
+      </p>
+      <div id="downloadHistory" style="margin-top:20px;"></div>
+    </div>
+
+    <!--기존구독상태-->
+    <div class="dash-card">
+      <h3>💰 결제 내역</h3>
+      <div id="paymentHistory">
+        <p style="color:#888;">로딩 중...</p>
+      </div>
+    </div>
+  </div>
+
+<script src="/js/utils.js"></script>
+<script>
+  const urlParams = new URLSearchParams(window.location.search);
+  const selectedPlan = urlParams.get('plan');
+  const API = '';
+  const token = localStorage.getItem('token');
+  const member = JSON.parse(localStorage.getItem('member') || 'null');
+  document.getElementById('serverEmail').textContent = member?.email || '';
+
+  if (!token || !member) { window.location.href = '/login.html'; }
+  document.getElementById('navEmail').textContent = member?.email || '';
+
+  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+
+  // 세션 검증 (만료/무효 시 즉시 로그인 페이지로)
+  async function validateSession() {
+    try {
+      const res = await fetch(`${API}/api/member/session`, { headers });
+      if (res.ok) return true;
+      if (res.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('member');
+        window.location.href = '/login.html';
+        return false;
+      }
+      return true;
+    } catch (e) {
+      return true; // 서버 접속 불가 시 기존 흐름 유지 (각 API에서 401 처리)
+    }
+  }
+
+  if (selectedPlan) {
+    // 구독 신청 섹션으로 스크롤
+    setTimeout(() => {
+      const subscribeSection = document.getElementById('subscribeSection');
+      if (subscribeSection) {
+        subscribeSection.scrollIntoView({ behavior: 'smooth' });
+
+        // 선택된 플랜 하이라이트
+        const planBtn = document.getElementById(`plan-${selectedPlan}`);
+        if (planBtn) {
+          planBtn.style.boxShadow = '0 0 20px rgba(74, 108, 247, 0.5)';
+          planBtn.style.borderColor = '#6c8cff';
+        }
+      }
+    }, 500);
+  }
+
+  // 초기 로드 (세션 검증 후 진행)
+  validateSession().then((valid) => {
+    if (!valid) return;
+    loadSubscription();
+    loadDownloads();
+    loadPayments();
+  });
+
+  document.getElementById('navEmail').textContent = member?.email || '';
+
+  function toggleDropdown() {
+    document.getElementById('dropdown').classList.toggle('show');
+  }
+
+  document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('dropdown');
+    const btn = document.getElementById('userBtn');
+    if (dropdown && !dropdown.contains(e.target) && !btn.contains(e.target)) {
+      dropdown.classList.remove('show');
+    }
+  });
+
+  async function loadSubscription() {
+    try {
+      const res = await fetch(`${API}/api/member/subscription`, { headers });
+      if (res.status === 401) return logout();
+      const data = await res.json();
+      const el = document.getElementById('subscriptionInfo');
+
+      if (data.hasActiveSubscription) {
+        const sub = data.subscription;
+        const expires = new Date(sub.expires_at);
+        const daysLeft = Math.ceil((expires - new Date()) / (1000 * 60 * 60 * 24));
+
+        el.innerHTML = `
+          <span class="status-badge status-active">활성</span>
+          <div style="margin-top:16px;">
+            <div class="info-row"><span class="label">플랜</span><span class="value">${sub.plan.toUpperCase()}</span></div>
+            <div class="info-row"><span class="label">만료일</span><span class="value">${formatDate(sub.expires_at)}</span></div>
+            <div class="info-row"><span class="label">남은 기간</span><span class="value">${daysLeft}일</span></div>
+          </div>
+        `;
+        document.getElementById('downloadSection').style.display = 'block';
+      } else {
+        el.innerHTML = '<span class="status-badge status-none">구독 없음</span><p style="color:#888; margin-top:12px;">아래에서 플랜을 선택하세요.</p>';
+      }
+
+      // 구독 이력
+      if (data.history && data.history.length > 0) {
+        let historyHTML = '<div style="margin-top:20px;"><h4 style="color:#aaa; font-size:14px; margin-bottom:8px;">구독 이력</h4>';
+        data.history.forEach(h => {
+          const isActive = h.is_active === 1 && new Date(h.expires_at) > new Date();
+          historyHTML += `<div class="info-row">
+            <span class="label">${h.plan.toUpperCase()} (₩${h.amount.toLocaleString()})</span>
+            <span class="value">${formatDate(h.started_at)} ~ ${formatDate(h.expires_at)}
+              <span class="status-badge ${isActive ? 'status-active' : 'status-expired'}" style="margin-left:8px;">${isActive ? '활성' : '만료'}</span>
+            </span>
+          </div>`;
+        });
+        historyHTML += '</div>';
+        el.innerHTML += historyHTML;
+      }
+    } catch (e) {
+      console.error('구독 조회 실패:', e);
+    }
+  }
+
+  async function subscribe(plan) {
+    if (!confirm(`${plan.toUpperCase()} 플랜을 구독하시겠습니까?`)) return;
+    try {
+      const res = await fetch(`${API}/api/member/subscribe`, {
+        method: 'POST', headers,
+        body: JSON.stringify({ plan }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`구독이 완료되었습니다!\n만료일: ${data.subscription.expiresAt}`);
+        location.reload();
+      } else {
+        alert(data.message);
+      }
+    } catch (e) {
+      alert('구독 신청에 실패했습니다.');
+    }
+  }
+
+  async function loadDownloads() {
+    try {
+      const res = await fetch(`${API}/api/member/downloads`, { headers });
+      const data = await res.json();
+
+      if (data.currentVersion && data.currentVersion !== '-') {
+        let info = `최신 버전: v${data.currentVersion}`;
+        if (data.currentFileSize) {
+          info += ` (${(data.currentFileSize / 1024 / 1024).toFixed(1)}MB)`;
+        }
+        document.getElementById('versionText').textContent = info;
+      } else {
+        document.getElementById('versionText').textContent = '다운로드 가능한 파일이 없습니다.';
+        document.getElementById('downloadBtn').disabled = true;
+        document.getElementById('downloadBtn').textContent = '파일 준비 중';
+      }
+
+      if (data.currentDescription) {
+        const existing = document.getElementById('fileDescription');
+        if (existing) existing.remove();
+
+        const descEl = document.createElement('p');
+        descEl.id = 'fileDescription';
+        descEl.style.cssText = 'color:#aaa; font-size:13px; margin-top:12px;';
+        descEl.textContent = data.currentDescription;
+        document.getElementById('downloadHistory').before(descEl);
+      }
+
+      if (data.downloads && data.downloads.length > 0) {
+        let html = '<h4 style="color:#aaa; font-size:14px; margin-bottom:8px;">다운로드 이력</h4>';
+        data.downloads.slice(0, 5).forEach(d => {
+          const dt = formatDateTime(d.downloaded_at);
+          html += `<div class="info-row"><span class="label">v${d.version}</span><span class="value">${dt}</span></div>`;
+        });
+        document.getElementById('downloadHistory').innerHTML = html;
+      }
+    } catch (e) {
+      console.error('다운로드 이력 조회 실패:', e);
+    }
+  }
+
+  async function loadPayments() {
+    try {
+      const res = await fetch(`${API}/api/member/payments`, { headers });
+      const data = await res.json();
+      const el = document.getElementById('paymentHistory');
+
+      if (!data.payments.length) {
+        el.innerHTML = '<p style="color:#888;">결제 내역이 없습니다.</p>';
+        return;
+      }
+
+      const planLabels = { basic: 'Basic', standard: 'Standard', premium: 'Premium' };
+      const statusLabels = { completed: '완료', refunded: '환불', pending: '대기' };
+      const statusClass = { completed: 'status-active', refunded: 'status-expired', pending: 'status-none' };
+      const methodLabels = { bank_transfer: '계좌이체', card: '카드', other: '기타' };
+
+      let html = `<div class="info-row" style="border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px; margin-bottom:8px;">
+        <span class="label" style="color:#fff; font-weight:600;">총 결제 금액</span>
+        <span class="value" style="color:#6c8cff; font-weight:700;">₩${data.totalAmount.toLocaleString()}</span>
+      </div>`;
+
+      data.payments.forEach(p => {
+        html += `<div class="info-row">
+          <span class="label">
+            ${planLabels[p.plan] || p.plan} · ₩${p.amount.toLocaleString()} · ${methodLabels[p.payment_method] || p.payment_method}
+          </span>
+          <span class="value">
+            ${formatDate(p.started_at)} ~ ${formatDate(p.expires_at)}
+            <span class="status-badge ${statusClass[p.status] || 'status-none'}" style="margin-left:8px;">
+              ${statusLabels[p.status] || p.status}
+            </span>
+          </span>
+        </div>`;
+      });
+
+      el.innerHTML = html;
+    } catch (e) {
+      console.error('결제 내역 조회 실패:', e);
+    }
+  }
+
+  async function download() {
+    const btn = document.getElementById('downloadBtn');
+    btn.disabled = true;
+    btn.textContent = '다운로드 준비 중...';
+    try {
+      const res = await fetch(`${API}/api/member/download`, { headers });
+      if (res.status === 403) {
+        alert('활성 구독이 필요합니다.');
+        return;
+      }
+
+      if (res.status === 404) {
+        const data = await res.json();
+        alert(data.message || '다운로드 가능한 파일이 없습니다.');
+        return;
+      }
+
+       // 서버가 보내주는 파일명 추출
+      let filename = 'QuePilot_Server';  // 확장자 없는 기본값
+      const disposition = res.headers.get('Content-Disposition');
+      if (disposition) {
+        const utf8Match = disposition.match(/filename\*=UTF-8''(.+)/i);
+        if (utf8Match) {
+          filename = decodeURIComponent(utf8Match[1]);
+        } else {
+          const match = disposition.match(/filename="?([^";\n]+)"?/i);
+          if (match) filename = match[1].trim();
+        }
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+      loadDownloads();
+    } catch (e) {
+      alert('다운로드에 실패했습니다.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'QuePilot 서버 다운로드';
+    }
+  }
+
+  function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('member');
+    window.location.href = '/login.html';
+  }
+</script>
+</body>
+</html>

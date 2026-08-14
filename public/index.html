@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
+  <title>QuePilot – 실시간 협업 큐 시스템</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+  <!-- 네비게이션 -->
+  <nav class="navbar">
+    <a href="/" class="logo">Que<span>Pilot</span></a>
+    <div class="nav-links">
+      <a href="#features">기능</a>
+      <a href="#pricing">가격</a>
+      <a href="#download">다운로드</a>
+
+      <!-- 비로그인 -->
+      <div id="guestNav">
+        <a href="/login" class="btn btn-outline">로그인</a>
+        <a href="/login#register" class="btn btn-primary">시작하기</a>
+      </div>
+
+      <!-- 로그인 -->
+      <div id="userNav" style="display:none; position:relative;">
+        <button class="btn btn-outline" onclick="toggleDropdown()" id="userBtn" style="display:flex; align-items:center; gap:8px;">
+          <span id="navUserEmail"></span>
+          <span style="font-size:10px;">▼</span>
+        </button>
+        <div class="dropdown" id="dropdown">
+          <a href="/dashboard">내 구독 관리</a>
+          <a href="/dashboard#download">다운로드</a>
+          <div class="dropdown-divider"></div>
+          <a href="#" onclick="logout()">로그아웃</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 히어로 -->
+  <section class="hero">
+    <div>
+      <h1>실시간 <span>큐 시스템</span>으로<br>완벽한 무대를 만드세요</h1>
+      <p>QuePilot은 내부망 전용 실시간 협업 시스템입니다. 타임라인 동기화, 음성 통화, 큐 시트 관리까지 하나의 플랫폼에서.</p>
+      <div class="hero-buttons">
+        <a href="/login.html#register" class="btn btn-primary" style="padding:14px 36px; font-size:16px;">무료로 시작하기</a>
+        <a href="#features" class="btn btn-outline" style="padding:14px 36px; font-size:16px;">자세히 보기</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 기능 소개 -->
+  <section class="features" id="features">
+    <h2>왜 QuePilot인가?</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="icon">⏱️</div>
+        <h3>실시간 타임라인 동기화</h3>
+        <p>모든 참여자의 화면이 초 단위로 동기화됩니다. 완벽한 협업.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🎙️</div>
+        <h3>WebRTC 음성 통화</h3>
+        <p>프로젝트 방 내에서 실시간 음성 통화. 별도 앱 없이 즉시 소통.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">📋</div>
+        <h3>큐 시트 관리</h3>
+        <p>프로젝트별 큐 시트를 생성하고 실시간으로 공유. 수정 사항이 즉시 반영.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🔒</div>
+        <h3>내부망 전용</h3>
+        <p>외부 인터넷 없이 내부 네트워크에서만 동작. 보안이 중요한 현장에 최적.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">👥</div>
+        <h3>역할 기반 권한</h3>
+        <p>Admin과 Client 역할을 분리하여 체계적인 프로젝트 운영 가능.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">💬</div>
+        <h3>개인 메시지</h3>
+        <p>참여자 간 1:1 개인 메시지로 빠르고 정확한 커뮤니케이션.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 가격 -->
+  <section class="pricing" id="pricing">
+    <h2>합리적인 가격</h2>
+    <div class="pricing-grid">
+      <!-- <div class="pricing-card">
+        <h3>Basic</h3>
+        <div class="price">₩50,000<span>/월</span></div>
+        <div class="period">1개월 구독</div>
+        <ul>
+          <li>서버 1대 라이선스</li>
+          <li>실시간 타임라인 동기화</li>
+          <li>WebRTC 음성 통화</li>
+          <li>개인 메시지</li>
+          <li>이메일 지원</li>
+        </ul>
+        <a href="/login.html#register" class="btn btn-outline" style="width:100%; display:block; text-align:center;">선택하기</a>
+      </div> -->
+      <div class="pricing-card popular">
+        <h3>Standard</h3>
+        <div class="price">₩130,000<span>/3개월</span></div>
+        <div class="period">3개월 구독 (월 ₩43,333)</div>
+        <ul>
+          <!-- <li>Basic 기능 전체 포함</li>
+          <li>서버 1대 라이선스</li>
+          <li>우선 기술 지원</li>
+          <li>업데이트 우선 제공</li>
+          <li>13% 할인 적용</li> -->
+        </ul>
+        <a href="#" onclick="selectPlan('standard')" class="btn btn-primary" style="width:100%; display:block; text-align:center;">선택하기</a>
+      </div>
+      <!-- <div class="pricing-card">
+        <h3>Premium</h3>
+        <div class="price">₩450,000<span>/년</span></div>
+        <div class="period">12개월 구독 (월 ₩37,500)</div>
+        <ul>
+          <li>Standard 기능 전체 포함</li>
+          <li>서버 1대 라이선스</li>
+          <li>전화 기술 지원</li>
+          <li>커스터마이징 상담</li>
+          <li>25% 할인 적용</li>
+        </ul>
+        <a href="/login.html#register" class="btn btn-outline" style="width:100%; display:block; text-align:center;">선택하기</a>
+      </div> -->
+    </div>
+  </section>
+
+  <!-- 공개 다운로드 -->
+  <section class="pricing" id="download" style="padding-top:0;">
+    <h2>데스크탑 앱 다운로드</h2>
+    <div style="max-width:640px; margin:0 auto; text-align:center;">
+      <div class="dash-card" style="padding:32px;">
+        <h3 style="margin-bottom:8px;">QuePilot 데스크탑 앱</h3>
+        <p style="color:#aaa; font-size:14px; line-height:1.7; margin-bottom:8px;">
+          Windows 데스크탑에서 사용하는 관리자용 앱입니다.<br>
+          로그인 없이 누구나 다운로드할 수 있습니다.
+        </p>
+        <p id="desktopFileInfo" style="color:#6c8cff; font-size:13px; margin-bottom:16px;">파일 정보를 불러오는 중...</p>
+        <button class="btn btn-primary" onclick="downloadDesktop()" id="desktopDownloadBtn" style="width:100%; display:block; text-align:center; font-size:16px; padding:14px 0;">
+          데스크탑 앱 다운로드
+        </button>
+        <p id="desktopFileDesc" style="color:#888; font-size:13px; margin-top:12px;"></p>
+        <p style="color:#555; font-size:12px; margin-top:16px;">
+          로컬서버(설치 파일)는 구독 후 대시보드에서 다운로드할 수 있습니다.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 푸터 -->
+  <footer class="footer">
+    <p>&copy; 2026 QuePilot. All rights reserved.</p>
+  </footer>
+
+
+<script>
+  const token = localStorage.getItem('token');
+  const member = JSON.parse(localStorage.getItem('member') || 'null');
+
+  const guestNav = document.getElementById('guestNav');
+  const userNav = document.getElementById('userNav');
+
+  function showGuest() {
+    guestNav.style.display = 'block';
+    userNav.style.display = 'none';
+  }
+
+  function showUser(email) {
+    document.getElementById('navUserEmail').textContent = email;
+    guestNav.style.display = 'none';
+    userNav.style.display = 'block';
+  }
+
+  // 세션 검증 완료 전 깜빡임 방지 (두 네비 모두 잠시 숨김)
+  guestNav.style.display = 'none';
+  userNav.style.display = 'none';
+
+  // 서버에서 세션 유효성 확인 (만료/무효 시 게스트 상태로 전환)
+  async function checkSession() {
+    if (!token || !member) { showGuest(); return; }
+    try {
+      const res = await fetch('/api/member/session', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        localStorage.setItem('member', JSON.stringify(data.member));
+        showUser(data.member.email);
+      } else {
+        localStorage.removeItem('token');
+        localStorage.removeItem('member');
+        showGuest();
+      }
+    } catch (e) {
+      // 서버 접속 불가 시 로컬 저장 상태로 표시 (오프라인 허용)
+      if (token && member) showUser(member.email); else showGuest();
+    }
+  }
+
+  checkSession();
+
+  function toggleDropdown() {
+    document.getElementById('dropdown').classList.toggle('show');
+  }
+
+  // 다른 곳 클릭 시 드롭다운 닫기
+  document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('dropdown');
+    const btn = document.getElementById('userBtn');
+    if (dropdown && !dropdown.contains(e.target) && !btn.contains(e.target)) {
+      dropdown.classList.remove('show');
+    }
+  });
+
+   function selectPlan(plan) {
+    const hasSession = !!localStorage.getItem('token') && !!localStorage.getItem('member');
+    if (!hasSession) {
+      // 비로그인 → 로그인 페이지 (로그인 후 결제 페이지로 이동하도록 redirect 파라미터 포함)
+      window.location.href = `/login?redirect=/dashboard?plan=${plan}`;
+    } else {
+      // 로그인 상태 → 대시보드 결제 페이지로
+      window.location.href = `/dashboard?plan=${plan}`;
+    }
+  }
+
+  function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('member');
+    window.location.href = '/';
+  }
+
+  // ---------- 공개 다운로드 (데스크탑 앱) ----------
+  async function loadDesktopFile() {
+    const btn = document.getElementById('desktopDownloadBtn');
+    const infoEl = document.getElementById('desktopFileInfo');
+    const descEl = document.getElementById('desktopFileDesc');
+    try {
+      const res = await fetch('/api/public/files/desktop');
+      const data = await res.json();
+      if (data.success) {
+        infoEl.textContent = `최신 버전: v${data.version}${data.fileSize ? ` (${(data.fileSize / 1024 / 1024).toFixed(1)}MB)` : ''}`;
+        if (data.description) descEl.textContent = data.description;
+        btn.disabled = false;
+      } else {
+        infoEl.textContent = '다운로드 가능한 파일이 없습니다.';
+        btn.disabled = true;
+        btn.textContent = '파일 준비 중';
+      }
+    } catch (e) {
+      infoEl.textContent = '파일 정보를 불러오지 못했습니다.';
+      btn.disabled = true;
+    }
+  }
+
+  async function downloadDesktop() {
+    const btn = document.getElementById('desktopDownloadBtn');
+    btn.disabled = true;
+    btn.textContent = '다운로드 준비 중...';
+    try {
+      const res = await fetch('/api/public/download/desktop');
+      if (res.status === 404) {
+        const data = await res.json();
+        alert(data.message || '다운로드 가능한 파일이 없습니다.');
+        return;
+      }
+
+      // 서버가 보내주는 파일명 추출
+      let filename = 'QuePilot_Desktop';
+      const disposition = res.headers.get('Content-Disposition');
+      if (disposition) {
+        const utf8Match = disposition.match(/filename\*=UTF-8''(.+)/i);
+        if (utf8Match) {
+          filename = decodeURIComponent(utf8Match[1]);
+        } else {
+          const match = disposition.match(/filename="?([^";\n]+)"?/i);
+          if (match) filename = match[1].trim();
+        }
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+      loadDesktopFile();
+    } catch (e) {
+      alert('다운로드에 실패했습니다.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '데스크탑 앱 다운로드';
+    }
+  }
+
+  loadDesktopFile();
+</script>
+
+</body>
+</html>
